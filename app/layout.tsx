@@ -2,10 +2,11 @@ import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import Providers from "./providers";
 import Navbar from "./components/Navbar";
+import Footer from "@/app/components/footer"; // en minúscula como lo tenés
 
 export const metadata = {
   title: "Museo Veneris",
-  description: "Frontend del Museo",
+  description: "El amanecer eterno del arte",
 };
 
 const geistSans = Geist({
@@ -18,20 +19,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white`}>
+      {/* 🔥 FIX PRINCIPAL: flex + min-h-screen */}
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-white min-h-screen flex flex-col`}>
+        
+        <Navbar />
+
+        {/* El contenido crece y empuja el footer */}
         <Providers>
-           <Navbar />
-           {/* padding-top para que el contenido no quede debajo del navbar */}
-          <main className="pt-16">{children}</main>
+          <main className="flex-grow pt-16">
+            {children}
+          </main>
         </Providers>
+
+        {/* Aquí aparece SIEMPRE */}
+        <Footer />
+
       </body>
     </html>
   );
