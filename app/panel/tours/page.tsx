@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Plus, Edit, Trash2, Ticket, Search, User, CalendarClock } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 // ─────────── Tipos ───────────
 interface Tour {

@@ -20,7 +20,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ;
 
 /* ========= Tipos según tu API / BD ========= */
 
@@ -250,10 +250,10 @@ export default function FacturacionPage() {
     async function load() {
       try {
         const [p, t, m, pr] = await Promise.all([
-          axios.get(`${API}/api/productos`),
-          axios.get(`${API}/api/tours`),
-          axios.get(`${API}/api/metodos-pago`),
-          axios.get(`${API}/api/precios`),
+          axios.get(`${API_BASE}/api/productos`),
+          axios.get(`${API_BASE}/api/tours`),
+          axios.get(`${API_BASE}/api/metodos-pago`),
+          axios.get(`${API_BASE}/api/precios`),
         ]);
 
         setProductos(normalizeArray<Producto>(p.data));
@@ -584,7 +584,7 @@ const total = subtotal + impuesto - montoDescuento;
 
   try {
     setLoadingPago(true);
-    const res = await axios.post(`${API}/api/facturas-publico/registrar-publico`, payload);
+    const res = await axios.post(`${API_BASE}/api/facturas-publico/registrar-publico`, payload);
 
     const codigo = res.data?.codigo ?? res.data?.codigoFactura ?? res.data?.codigo_factura ?? null;
 
@@ -757,7 +757,7 @@ const total = subtotal + impuesto - montoDescuento;
                       {/* Mostrar Imagen si existe */}
                       {p.urlImagen ? (
                         <img
-                          src={`http://localhost:3000${p.urlImagen}`} // <<--- ASÍ CARGA!!!
+                          src={`${API_BASE}${p.urlImagen}`} // <<--- ASÍ CARGA!!!
                           alt={p.nombre}
                           className="w-full h-32 object-cover rounded-lg mb-2 shadow-sm hover:shadow-lg duration-200"
                         />
@@ -1027,7 +1027,7 @@ const total = subtotal + impuesto - montoDescuento;
                             type="button"
                             onClick={() =>
                               window.open(
-                                `${API}/api/pdf/publico/${f.codigoFactura}`,
+                                `${API_BASE}/api/pdf/publico/${f.codigoFactura}`,
                                 "_blank"
                               )
                             }

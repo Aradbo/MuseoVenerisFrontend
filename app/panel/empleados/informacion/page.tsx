@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Search, UserCircle, BadgeInfo, Phone, Briefcase, Clock, Eye } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 // ================== TIPOS BASADOS EN VW ==================
 interface Empleado {
