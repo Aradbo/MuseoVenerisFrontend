@@ -7,7 +7,7 @@ const linksInvitado = [
   { href: "/Invitado", label: "Inicio" },
   { href: "../Invitado/obras", label: "Obras" },
   { href: "../Invitado/exposiciones", label: "Exposiciones" },
-  { href: "/about", label: "Acerca de" },
+  { href: "../Invitado/about", label: "Acerca de" },
 ];
 
 export default function NavbarInvitado() {
@@ -19,7 +19,7 @@ export default function NavbarInvitado() {
         {/* Logo */}
         <Link href="/Invitado" className="flex items-center gap-3">
           <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#f5e6b3] text-[#b5851c] shadow-sm">
-            <Palette className="w-5 h-5" />
+            <img src="logo-museo-veneris.png"/>
           </span>
           <div className="leading-tight">
             <p className="font-semibold text-slate-900 text-sm md:text-base">Museo Veneris</p>

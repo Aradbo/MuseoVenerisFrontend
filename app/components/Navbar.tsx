@@ -36,7 +36,7 @@ export default function Navbar() {
         {/* Logo + texto */}
         <Link href="/inicio" className="flex items-center gap-3">
           <span className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-[#f5e6b3] text-[#b5851c] shadow-sm">
-            <Palette className="w-5 h-5" />
+            <img src="logo-museo-veneris.png"/>
           </span>
           <div className="leading-tight">
             <p className="font-semibold text-slate-900 text-sm md:text-base">
