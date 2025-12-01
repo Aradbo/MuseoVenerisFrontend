@@ -37,7 +37,7 @@ function RegistroForm() {
   const [contrasenia, setContrasenia] = useState("");
   const [fechaNacimiento, setFechaNacimiento] = useState("");
   const [genero, setGenero] = useState<"M" | "F" | "O" | "">("");
-  const [correo] = useState(correoParam);
+  const [correo, setCorreo] = useState(correoParam);
 
   // Lugar
   const [paises, setPaises] = useState<OpcionLugar[]>([]);
@@ -459,18 +459,25 @@ function RegistroForm() {
           </div>
 
           {/* Correo (solo lectura) */}
-          <div>
-            <span className="block text-sm font-medium text-slate-700 mb-1">
-              Correo
-            </span>
-            <div className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm bg-slate-50 text-slate-600">
-              {correo || "Sin correo"}
-            </div>
-            <p className="mt-1 text-xs text-slate-400">
-              Este es el correo que usaste con Google.
-            </p>
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Correo
+              </label>
 
+              <input
+                type="email"
+                className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm 
+                outline-none focus:ring-2 focus:ring-[#e0b251] bg-white focus:border-[#e0b251]"
+                value={correo}
+                onChange={(e) => setCorreo(e.target.value)}
+                placeholder="ejemplo@correo.com"
+                required
+              />
+
+              <p className="mt-1 text-xs text-slate-400">
+                Escríbelo o se rellenará si viene desde Google.
+              </p>
+            </div>              
           <button
             type="submit"
             disabled={loading}

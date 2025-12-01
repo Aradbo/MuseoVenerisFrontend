@@ -203,6 +203,20 @@ export default function LoginPage() {
           >
             Entrar como Invitado
           </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.setItem("tipoUsuario", "Invitado");
+              localStorage.removeItem("token");
+              localStorage.removeItem("idEmpleado");
+              localStorage.removeItem("idVisitante");
+              router.push("../registro");
+            }}
+            className="w-full mt-3 rounded-xl border border-gray-300 text-gray-700 text-sm py-2.5 hover:bg-gray-50 transition"
+          >
+            Registrarse
+          </button>
         </div>
 
       </div>
