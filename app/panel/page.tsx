@@ -146,11 +146,14 @@ const quickActions = [
   {
     id: "facturar",
     titulo: "Registrar nueva venta",
-    descripcion: "Facturación inmediata y emisión de ticket.",
+    descripcion: "PRONTO DISPONIBLE",
     icon: CreditCard,
-    color: "from-amber-400 to-amber-600",
-    href: "/panel/facturar",
+    color: "from-gray-500 to-gray",
+    href: null,              // NO navegará
+    disabled: true,          // para manejar estilo y bloqueo
+    tag: "Próximamente",     // etiqueta visible
   },
+
   {
     id: "obras",
     titulo: "Gestionar obras",
@@ -208,14 +211,6 @@ const quickActions = [
     href: "/panel/visitantes",
   },
   {
-    id: "empleados",
-    titulo: "Gestionar empleados",
-    descripcion: "Contratación, roles y administración.",
-    icon: Users,
-    color: "from-slate-400 to-slate-600",
-    href: "/panel/empleados/gestion",
-  },
-  {
     id: "empleados-info",
     titulo: "Ver información de empleados",
     descripcion: "Historial, privilegios y actividad.",
@@ -233,6 +228,12 @@ const quickActions = [
 
       <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-10">
         <div>
+          
+           <button onClick={()=>location.href="/login"}
+          className="px-4 py-2 bg-[#76d0ee] text-white rounded hover:bg-[#435fa7]">
+        ← Volver a login</button> <br /> <br /> 
+       
+
           <h1 className="flex items-center gap-3 text-4xl font-bold">
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#38bdf8] to-[#0ea5e9] shadow-md">
               <LayoutDashboard className="w-6 h-6 text-white"/>
@@ -256,9 +257,12 @@ const quickActions = [
           <div className="grid gap-3">
   {quickActions.map(a =>{
     const Icon=a.icon;
+    const disabled = a.disabled || !a.href;   // ← si no trae href o está marcado disabled
+  const gradient = a.color ?? "from-gray-400 to-gray-600";
     return(
       <button key={a.id}
-      onClick={()=>router.push(a.href)}
+      disabled={disabled}   
+      onClick={()=>router.push(a.href!)}
       className="flex items-center justify-between rounded-xl px-4 py-4 bg-white border border-slate-200 hover:shadow-md hover:border-transparent hover:bg-gradient-to-r transition group duration-200"
       style={{ backgroundImage:`linear-gradient(to right, var(--tw-gradient-stops))` }}>
 

@@ -43,15 +43,26 @@ export default function EmpleadosPage(){
 
   // ============= LOAD SEGURO (sin error de efecto) ============
   useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = async () => {
+    try {
       const r = await axios.get(`${API}/api/vistas/empleados-historial`);
-      const data:Empleado[] = r.data.recordset || [];
+
+      const result = r.data;
+      const data:Empleado[] =
+        result.data || result.recordset || result.recordsets?.[0] || [];
+
       setEmpleados(data);
       setBackup(data);
       setLoading(false);
-    };
-    fetchData();
-  }, []);
+    } catch (e) {
+      console.error("Error cargando empleados:", e);
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, []);
+
 
   // ================= FILTRO =================
   function filtrar(t:string){
@@ -75,6 +86,9 @@ export default function EmpleadosPage(){
 
       {/* HEADER */}
       <div className="flex justify-between items-center">
+         <button onClick={()=>location.href="/panel"}
+          className="px-4 py-2 bg-[#6c8ad5] text-white rounded hover:bg-[#435fa7]">
+        ← Volver</button>
         <h1 className="text-4xl font-extrabold flex items-center gap-3 text-[#0f1e46]">
           <UserCircle size={38}/> Empleados del Museo
         </h1>
