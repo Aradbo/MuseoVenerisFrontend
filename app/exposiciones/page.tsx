@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useEffect, useMemo, useState, FormEvent } from "react";
 import axios from "axios";
 import Link from "next/link";
@@ -25,18 +26,15 @@ type ApiListResponse<T> = {
 
 type Exposicion = {
   idExposicion: number;
-  Exposicion?: string | null;           // e.nombre
+  Exposicion?: string | null;
   descripcion?: string | null;
   DescripcionExposicion?: string | null;
   estado?: string | null;
   urls?: string | null;
   tipo?: string | null;
-
   Sala?: string | null;
   Edificio?: string | null;
   Sucursal?: string | null;
-
-  // Nuevos campos de la vista
   FechaInicioExposicion?: string | null;
   FechaFinExposicion?: string | null;
   TotalObras?: number | null;
@@ -45,97 +43,19 @@ type Exposicion = {
   ListaObrasAunExhibidas?: string | null;
 };
 
-
 type Orden = "relevancia" | "recientes" | "antiguas" | "titulo";
 
-// Helpers
-function getFirstImage(urls: string | null | undefined): string | null {
-  if (!urls) return null;
-  const parts = urls
-    .split(/[;,|]/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-  return parts[0] || null;
-}
-
-
-function parseFecha(valor?: string | null): Date | null {
-  if (!valor) return null;
-  const d = new Date(valor);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
-function getTipoLabel(tipo?: string | null): string {
-  const t = (tipo ?? "").toUpperCase().trim();
-  if (t === "P") return "Presencial";
-  if (t === "V") return "Virtual";
-  // Por si luego tienes otros tipos (T = temporal, PERM, etc.)
-  if (!t) return "Sin tipo";
-  return tipo ?? "Otro";
-}
-
-function getRangoFechas(expo: Exposicion): { inicio: Date | null; fin: Date | null } {
-  const inicio = parseFecha(expo.FechaInicioExposicion ?? null);
-  const fin = parseFecha(expo.FechaFinExposicion ?? null);
-  return { inicio, fin };
-}
-
-function obtenerAnioExpo(expo: Exposicion): number | null {
-  const { inicio } = getRangoFechas(expo);
-  if (!inicio) return null;
-  return inicio.getFullYear();
-}
-
-function calcularEstado(expo: Exposicion): "activa" | "finalizada" | "proxima" | "otro" {
-  const ahora = new Date();
-  const { inicio, fin } = getRangoFechas(expo);
-
-  // 1) Si tenemos rango real desde Obra_Exposicion
-  if (inicio && inicio > ahora) return "proxima";
-  if (fin && fin < ahora) return "finalizada";
-  if (inicio && inicio <= ahora && (!fin || fin >= ahora)) return "activa";
-
-  // 2) Respaldo usando texto de estado si no hay fechas
-  const raw = (expo.estado || "").toLowerCase().trim();
-  if (raw.startsWith("a")) return "activa";
-
-  return "otro";
-}
-
-
-
-function normalizarEstado(raw?: string | null): "activa" | "finalizada" | "proxima" | "otro" {
-  if (!raw) return "otro";
-  const e = raw.toLowerCase().trim();
-
-  if (e.startsWith("a")) return "activa"; // Activa / Active / etc.
-  if (e.includes("final") || e.includes("cerr")) return "finalizada";
-  if (e.includes("próx") || e.includes("prox") || e.includes("futuro")) return "proxima";
-
-  return "otro";
-}
-
-function obtenerAnio(fecha?: string | null): number | null {
-  if (!fecha) return null;
-  const d = new Date(fecha);
-  if (Number.isNaN(d.getTime())) return null;
-  return d.getFullYear();
-}
-
-export default function ExposicionesPage() {
+function ExposicionesPageContent() {  // ← solo envuelto, nada se borró
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [exposiciones, setExposiciones] = useState<Exposicion[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filtros / UI
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get("search") ?? ""
   );
-  const [estadoFiltro, setEstadoFiltro] = useState<"todas" | "activa" | "finalizada" | "proxima">(
-    "todas"
-  );
+  const [estadoFiltro, setEstadoFiltro] = useState<"todas" | "activa" | "finalizada" | "proxima">("todas");
   const [tipoFiltro, setTipoFiltro] = useState<string>("todas");
   const [anioMin, setAnioMin] = useState<string>("");
   const [anioMax, setAnioMax] = useState<string>("");
@@ -150,17 +70,64 @@ export default function ExposicionesPage() {
         );
         setExposiciones(resp.data?.data ?? []);
       } catch (error) {
-        console.error("Error cargando exposiciones", error);
         setExposiciones([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchExpos();
   }, []);
 
-  // Tipos dinámicos para el select "Tipo de exposición"
+  function getFirstImage(urls?: string | null) {
+    if (!urls) return null;
+    return urls.split(/[;,|]/).map(s => s.trim())[0] ?? null;
+  }
+
+  function parseFecha(valor?: string | null) {
+    if (!valor) return null;
+    const d = new Date(valor);
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  function getTipoLabel(tipo?: string | null) {
+    const t = (tipo ?? "").toUpperCase().trim();
+    if (t === "P") return "Presencial";
+    if (t === "V") return "Virtual";
+    if (!t) return "Sin tipo";
+    return tipo ?? "Otro";
+  }
+
+  function getRangoFechas(expo: Exposicion) {
+    const inicio = parseFecha(expo.FechaInicioExposicion ?? null);
+    const fin = parseFecha(expo.FechaFinExposicion ?? null);
+    return { inicio, fin };
+  }
+
+  function obtenerAnioExpo(expo: Exposicion) {
+    const { inicio } = getRangoFechas(expo);
+    return inicio && !isNaN(inicio.getTime()) ? inicio.getFullYear() : null;
+  }
+
+  function normalizarEstado(raw?: string | null) {
+    if (!raw) return "otro";
+    const e = raw.toLowerCase().trim();
+    if (e.startsWith("a")) return "activa";
+    if (e.includes("final") || e.includes("cerr")) return "finalizada";
+    if (e.includes("próx") || e.includes("prox") || e.includes("futuro")) return "proxima";
+    return "otro";
+  }
+
+  function calcularEstado(expo: Exposicion) {
+    const ahora = new Date();
+    const { inicio, fin } = getRangoFechas(expo);
+    if (inicio && inicio > ahora) return "proxima";
+    if (fin && fin < ahora) return "finalizada";
+    if (inicio && inicio <= ahora && (!fin || fin >= ahora)) return "activa";
+    const raw = (expo.estado || "").toLowerCase().trim();
+    if (raw.startsWith("a")) return "activa";
+    return "otro";
+  }
+
   const tiposDisponibles = useMemo(() => {
     const setTipos = new Set<string>();
     exposiciones.forEach((e) => {
@@ -170,113 +137,81 @@ export default function ExposicionesPage() {
     return Array.from(setTipos).sort((a, b) => a.localeCompare(b));
   }, [exposiciones]);
 
-  // Aplicar filtros, búsqueda y orden
   const exposFiltradas = useMemo(() => {
-  let resultado = [...exposiciones];
+    let resultado = [...exposiciones];
 
-  const q = searchQuery.trim().toLowerCase();
-  const minYear = anioMin ? Number(anioMin) : null;
-  const maxYear = anioMax ? Number(anioMax) : null;
+    const q = searchQuery.trim().toLowerCase();
+    const minYear = anioMin ? Number(anioMin) : null;
+    const maxYear = anioMax ? Number(anioMax) : null;
 
-  resultado = resultado.filter((expo) => {
-    const nombre = (expo.Exposicion ?? "").toLowerCase();
-    const desc = (expo.descripcion ?? expo.DescripcionExposicion ?? "").toLowerCase();
-    const sala = (expo.Sala ?? "").toLowerCase();
-    const edificio = (expo.Edificio ?? "").toLowerCase();
-    const sucursal = (expo.Sucursal ?? "").toLowerCase();
-    const tipo = (expo.tipo ?? "").toLowerCase();
+    resultado = resultado.filter((expo) => {
+      const nombre = (expo.Exposicion ?? "").toLowerCase();
+      const desc = (expo.descripcion ?? expo.DescripcionExposicion ?? "").toLowerCase();
+      const sala = (expo.Sala ?? "").toLowerCase();
+      const edificio = (expo.Edificio ?? "").toLowerCase();
+      const sucursal = (expo.Sucursal ?? "").toLowerCase();
+      const tipo = (expo.tipo ?? "").toLowerCase();
 
-    // 1. Filtro de texto
-    const coincideTexto =
-      !q ||
-      nombre.includes(q) ||
-      desc.includes(q) ||
-      sala.includes(q) ||
-      edificio.includes(q) ||
-      sucursal.includes(q) ||
-      tipo.includes(q);
+      const coincideTexto =
+        !q || nombre.includes(q) || desc.includes(q) || sala.includes(q) || edificio.includes(q) || sucursal.includes(q) || tipo.includes(q);
+      if (!coincideTexto) return false;
 
-    if (!coincideTexto) return false;
+      const estLogico = calcularEstado(expo);
+      if (estadoFiltro !== "todas" && estLogico !== estadoFiltro) return false;
 
-    // 2. Filtro por estado (usando fechas reales)
-    const estLogico = calcularEstado(expo);
-    if (estadoFiltro !== "todas" && estLogico !== estadoFiltro) return false;
+      if (tipoFiltro !== "todas" && tipo !== tipoFiltro.toLowerCase()) return false;
 
-    // 3. Filtro por tipo
-    if (tipoFiltro !== "todas" && tipo !== tipoFiltro.toLowerCase()) return false;
+      const anio = obtenerAnioExpo(expo);
+      if (minYear && anio && anio < minYear) return false;
+      if (maxYear && anio && anio > maxYear) return false;
 
-    // 4. Filtro por año (usamos FechaInicioExposicion)
-    const anio = obtenerAnioExpo(expo);
-    if (minYear && anio && anio < minYear) return false;
-    if (maxYear && anio && anio > maxYear) return false;
+      return true;
+    });
 
-    return true;
-  });
+    resultado.sort((a, b) => {
+      const ya = obtenerAnioExpo(a) ?? 0;
+      const yb = obtenerAnioExpo(b) ?? 0;
 
+      if (orden === "titulo") return (a.Exposicion ?? "").localeCompare(b.Exposicion ?? "");
+      if (orden === "recientes") return yb - ya;
+      if (orden === "antiguas") return ya - yb;
 
-    // Orden
-   resultado.sort((a, b) => {
-  const ya = obtenerAnioExpo(a) ?? 0;
-  const yb = obtenerAnioExpo(b) ?? 0;
+      const ahora = new Date();
+      const score = (e: Exposicion): number => {
+        let s = 0;
+        const est = calcularEstado(e);
+        const anio = obtenerAnioExpo(e);
 
-  if (orden === "titulo") {
-    const na = (a.Exposicion ?? "").toLowerCase();
-    const nb = (b.Exposicion ?? "").toLowerCase();
-    return na.localeCompare(nb);
-  }
+        if (est === "activa") s += 100;
+        if (est === "proxima") s += 70;
 
-  if (orden === "recientes") {
-    return yb - ya; // más nueva primero
-  }
+        if (q) {
+          const nombre = (e.Exposicion ?? "").toLowerCase();
+          const desc = (e.descripcion ?? e.DescripcionExposicion ?? "").toLowerCase();
+          const tipo = (e.tipo ?? "").toLowerCase();
+          const sala = (e.Sala ?? "").toLowerCase();
+          const edificio = (e.Edificio ?? "").toLowerCase();
+          const sucursal = (e.Sucursal ?? "").toLowerCase();
 
-  if (orden === "antiguas") {
-    return ya - yb; // más vieja primero
-  }
+          if (nombre.includes(q)) s += 40;
+          if (desc.includes(q)) s += 20;
+          if (tipo.includes(q)) s += 15;
+          if (sala.includes(q) || edificio.includes(q) || sucursal.includes(q)) s += 10;
+        }
 
-  // === RELEVANCIA (puedes dejar la que ya tenías, adaptada a obtenerAnioExpo) ===
-  const ahora = new Date();
+        const { inicio } = getRangoFechas(e);
+        if (inicio) {
+          const diffDias = Math.abs((inicio.getTime() - ahora.getTime()) / (1000 * 60 * 60 * 24));
+          s += Math.max(0, 50 - diffDias);
+        }
 
-  const score = (e: Exposicion): number => {
-    let s = 0;
-    const estLogico = calcularEstado(e);
-    const anio = obtenerAnioExpo(e);
+        if (anio) s += anio / 1000;
 
-    if (estLogico === "activa") s += 100;
-    if (estLogico === "proxima") s += 70;
+        return s;
+      };
 
-    if (q) {
-      const nombre = (e.Exposicion ?? "").toLowerCase();
-      const desc = (e.descripcion ?? e.DescripcionExposicion ?? "").toLowerCase();
-      const tipo = (e.tipo ?? "").toLowerCase();
-      const sala = (e.Sala ?? "").toLowerCase();
-      const edificio = (e.Edificio ?? "").toLowerCase();
-      const sucursal = (e.Sucursal ?? "").toLowerCase();
-
-      if (nombre.includes(q)) s += 40;
-      if (desc.includes(q)) s += 20;
-      if (tipo.includes(q)) s += 15;
-      if (sala.includes(q) || edificio.includes(q) || sucursal.includes(q)) s += 10;
-    }
-
-    const { inicio } = getRangoFechas(e);
-    if (inicio) {
-      const diffDias = Math.abs(
-        (inicio.getTime() - ahora.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      s += Math.max(0, 50 - diffDias); // 0–50 según cercanía
-    }
-
-    if (anio) s += anio / 1000;
-
-    return s;
-  };
-
-  const sa = score(a);
-  const sb = score(b);
-  if (sb !== sa) return sb - sa;
-  return yb - ya;
-});
-
+      return score(b) - score(a);
+    });
 
     return resultado;
   }, [exposiciones, searchQuery, estadoFiltro, tipoFiltro, anioMin, anioMax, orden]);
@@ -284,18 +219,13 @@ export default function ExposicionesPage() {
   const totalExpos = exposiciones.length;
   const totalMostradas = exposFiltradas.length;
 
-  // Handlers
   function handleSearchSubmit(e: FormEvent) {
     e.preventDefault();
   }
 
   function limpiarFiltros() {
-    setSearchQuery("");
-    setEstadoFiltro("todas");
-    setTipoFiltro("todas");
-    setAnioMin("");
-    setAnioMax("");
-    setOrden("relevancia");
+    setSearchQuery(""); setEstadoFiltro("todas"); setTipoFiltro("todas");
+    setAnioMin(""); setAnioMax(""); setOrden("relevancia");
   }
 
   return (
@@ -653,5 +583,14 @@ export default function ExposicionesPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+
+export default function ExposicionesPage() {
+  return (
+    <Suspense fallback={<div className="text-center py-10">Cargando exposiciones…</div>}>
+      <ExposicionesPageContent />
+    </Suspense>
   );
 }
