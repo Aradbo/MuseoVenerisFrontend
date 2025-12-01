@@ -77,7 +77,7 @@ function getFirstImage(urls: string | null | undefined): string | null {
   return parts[0] || null;
 }
 
-export default function ObrasPage() {
+function ObrasPageComponent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -604,5 +604,16 @@ export default function ObrasPage() {
         )}
       </main>
     </div>
+  );
+}
+
+
+import { Suspense } from "react";
+
+export default function ObrasPage() {
+  return (
+    <Suspense fallback={<p className="text-center py-10">Cargando obras...</p>}>
+      <ObrasPageComponent />
+    </Suspense>
   );
 }
