@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export function middleware(req) {
+export function middleware(req: NextRequest) {
   const url = req.nextUrl.clone();
   const tipo = req.cookies.get("tipoUsuario")?.value || req.headers.get("tipoUsuario") || null;
 
