@@ -1,4 +1,4 @@
-import "../app/globals.css";
+import "./globals.css";
 import { Geist, Geist_Mono } from "next/font/google";
 import Providers from "./providers";
 import Navbar from "./components/Navbar";

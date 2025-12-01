@@ -53,6 +53,26 @@ interface Precio {
   fechaInicio?: string | null;
   fechaFin?: string | null;
 }
+interface Impuesto {
+  idImpuesto: number;
+  nombre: string;
+  descripcion?: string;
+  porcentaje: number;
+  estado?: string;
+  fecha_inicio: string;
+  fecha_fin: string | null;
+}
+
+interface Descuento {
+  idDescuento: number;
+  nombre: string;
+  descripcion?: string;
+  porcentaje: number;
+  estado: string;
+  fecha_inicio: string;
+  fecha_fin: string | null;
+}
+
 
 type TipoCarrito = "producto" | "tour";
 
@@ -73,13 +93,62 @@ interface FacturaHistorial {
   items: CarritoItem[];
 }
 
+type ApiErrorResponse = {
+  response?: {
+    data?: {
+      message?: string;
+      Mensaje?: string;
+      mensaje?: string;
+      [key: string]: unknown;
+    };
+  };
+};
+type PrecioApi = {
+  idPrecio: number;
+  tipo_tarifa: string;
+  precio?: number;
+  precio_venta?: number;
+  fechaInicio?: string | null;
+  fecha_inicio?: string | null;
+  fechaFin?: string | null;
+  fecha_fin?: string | null;
+};
+
+
+
+
 /* ===== Helper para normalizar arrays de tus endpoints ===== */
-function normalizeArray<T = any>(raw: any): T[] {
-  if (Array.isArray(raw)) return raw;
-  if (Array.isArray(raw?.data)) return raw.data;
-  if (Array.isArray(raw?.recordset)) return raw.recordset;
+function isArray(value: unknown): value is unknown[] {
+  return Array.isArray(value);
+}
+
+function hasDataArray(r: unknown): r is { data: unknown[] } {
+  return (
+    typeof r === "object" &&
+    r !== null &&
+    Array.isArray((r as Record<string, unknown>).data)
+  );
+}
+
+function hasRecordsetArray(r: unknown): r is { recordset: unknown[] } {
+  return (
+    typeof r === "object" &&
+    r !== null &&
+    Array.isArray((r as Record<string, unknown>).recordset)
+  );
+}
+
+export function normalizeArray<T>(raw: unknown): T[] {
+  if (isArray(raw)) return raw as T[];
+
+  if (hasDataArray(raw)) return raw.data as T[];
+
+  if (hasRecordsetArray(raw)) return raw.recordset as T[];
+
   return [];
 }
+
+
 
 /* ===== Helper para formatear fecha bonita ===== */
 function formatDateTime(dateStr: string | null): string {
@@ -101,6 +170,9 @@ export default function FacturacionPage() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [metodosPago, setMetodosPago] = useState<MetodoPago[]>([]);
   const [precios, setPrecios] = useState<Precio[]>([]);
+  const [impuestos, setImpuestos] = useState<Impuesto[]>([]);
+  const [descuentos, setDescuentos] = useState<Descuento[]>([]);
+
 
   const [carrito, setCarrito] = useState<CarritoItem[]>([]);
   const [usuario, setUsuario] = useState("");
@@ -188,16 +260,17 @@ export default function FacturacionPage() {
         setTours(normalizeArray<Tour>(t.data));
         setMetodosPago(normalizeArray<MetodoPago>(m.data));
 
-        const preciosRaw = normalizeArray<any>(pr.data);
-        setPrecios(
-          preciosRaw.map((x: any) => ({
-            idPrecio: x.idPrecio,
-            tipo_tarifa: x.tipo_tarifa,
-            precio: x.precio ?? x.precio_venta ?? 0,
-            fechaInicio: x.fechaInicio ?? x.fecha_inicio ?? null,
-            fechaFin: x.fechaFin ?? x.fecha_fin ?? null,
-          }))
-        );
+       const preciosRaw = normalizeArray<PrecioApi>(pr.data);
+
+setPrecios(
+  preciosRaw.map((x): Precio => ({
+    idPrecio: x.idPrecio,
+    tipo_tarifa: x.tipo_tarifa,
+    precio: x.precio ?? x.precio_venta ?? 0,
+    fechaInicio: x.fechaInicio ?? x.fecha_inicio ?? null,
+    fechaFin: x.fechaFin ?? x.fecha_fin ?? null,
+  }))
+);
       } catch (err) {
         console.error("⚠ Error cargando catálogos", err);
         setError("No se pudieron cargar los catálogos de facturación.");
@@ -262,33 +335,75 @@ export default function FacturacionPage() {
     });
   }, [tours, busquedaTour]);
 
-  /* ============== Totales ============== */
-  const subtotalProductos = useMemo(
-    () =>
-      carrito
-        .filter((i) => i.tipo === "producto")
-        .reduce((a, i) => a + i.precio * i.cantidad, 0),
-    [carrito]
-  );
+  /* ============== Subtotales ============== */
+const subtotalProductos = useMemo(
+  () =>
+    carrito
+      .filter((i) => i.tipo === "producto")
+      .reduce((a, i) => a + i.precio * i.cantidad, 0),
+  [carrito]
+);
 
-  const subtotalTours = useMemo(
-    () =>
-      carrito
-        .filter((i) => i.tipo === "tour")
-        .reduce((a, i) => a + i.precio * i.cantidad, 0),
-    [carrito]
-  );
+const subtotalTours = useMemo(
+  () =>
+    carrito
+      .filter((i) => i.tipo === "tour")
+      .reduce((a, i) => a + i.precio * i.cantidad, 0),
+  [carrito]
+);
 
-  const subtotal = subtotalProductos + subtotalTours;
+const subtotal = subtotalProductos + subtotalTours;
 
-  // la entrada del visitante según tarifa seleccionada (una por factura)
-  const tarifaBase = precioTarifaActual;
+/* ============== Impuestos activos (ISV + otros) ============== */
+const impuestosActivos = useMemo(() => {
+  const hoy = new Date();
 
-  // Total estimado sin impuestos/ni descuentos (los aplica el SP en SQL)
-  const total = useMemo(
-    () => subtotal + tarifaBase,
-    [subtotal, tarifaBase]
-  );
+  return impuestos.filter((im: Impuesto) => {
+    const inicio = new Date(im.fecha_inicio);
+    const fin = im.fecha_fin ? new Date(im.fecha_fin) : null;
+
+    return (
+      (im.estado === "A" || !im.estado) &&
+      inicio <= hoy &&
+      (!fin || fin >= hoy)
+    );
+  });
+}, [impuestos]);
+
+// Suma porcentajes (ej: ISV 0.15 + Cultural 0.05 = 0.20)
+const tasaImpuestos = impuestosActivos.reduce(
+  (acc, im) => acc + Number(im.porcentaje || 0),
+  0
+);
+
+/* ============== Mejor descuento vigente ============== */
+const mejorDescuento = useMemo<number>(() => {
+  const hoy = new Date();
+
+  const disponibles = descuentos.filter((ds: Descuento) => {
+    const inicio = new Date(ds.fecha_inicio);
+    const fin = ds.fecha_fin ? new Date(ds.fecha_fin) : null;
+
+    return (
+      ds.estado === "A" &&
+      inicio <= hoy &&
+      (!fin || fin >= hoy)
+    );
+  });
+
+  if (disponibles.length === 0) return 0;
+
+  // Tomar el mayor porcentaje de los descuentos activos
+  return Math.max(...disponibles.map((d: Descuento) => Number(d.porcentaje)));
+}, [descuentos]);
+
+/* ============== Cálculos finales ============== */
+const impuesto = subtotal * tasaImpuestos;         // ej: subtotal * 0.20
+const montoDescuento = subtotal * mejorDescuento;  // ej: subtotal * 0.10
+
+const total = subtotal + impuesto - montoDescuento;
+
+
 
   /* ============== AGREGAR AL CARRITO ============== */
 
@@ -448,84 +563,63 @@ export default function FacturacionPage() {
   /* ============== REGISTRAR FACTURA PÚBLICO ============== */
 
   async function manejarPago(e: FormEvent) {
-    e.preventDefault();
-    setError(null);
+  e.preventDefault();
+  setError(null);
 
-    if (!usuario.trim()) {
-      setError("Ingresa el nombre completo del visitante.");
-      return;
-    }
-    if (!metodoPagoId) {
-      setError("Debes seleccionar un método de pago.");
-      return;
-    }
-    if (carrito.length === 0) {
-      setError("El carrito está vacío.");
-      return;
-    }
+  if (!usuario.trim()) return setError("Ingresa el nombre completo del visitante.");
+  if (!metodoPagoId) return setError("Debes seleccionar un método de pago.");
+  if (carrito.length === 0) return setError("El carrito está vacío.");
 
-    const listaProductos =
-      carrito
-        .filter((i) => i.tipo === "producto")
-        .map((i) => `${i.id}|${i.cantidad}`)
-        .join(",") || null;
+  const listaProductos = carrito.filter(i => i.tipo==="producto").map(i => `${i.id}|${i.cantidad}`).join(",") || null;
+  const listaTours     = carrito.filter(i => i.tipo==="tour").map(i => `${i.id}|${i.cantidad}`).join(",") || null;
 
-    const listaTours =
-      carrito
-        .filter((i) => i.tipo === "tour")
-        .map((i) => `${i.id}|${i.cantidad}`)
-        .join(",") || null;
+  const payload = {
+    nombreVisitante: usuario,
+    tipo_tarifa: tarifa,
+    listaProductos,
+    listaTours,
+    idMetodoPago: Number(metodoPagoId),
+    montoPago: total
+  };
 
-    const payload = {
-      nombreVisitante: usuario,
+  try {
+    setLoadingPago(true);
+    const res = await axios.post(`${API}/api/facturas-publico/registrar-publico`, payload);
+
+    const codigo = res.data?.codigo ?? res.data?.codigoFactura ?? res.data?.codigo_factura ?? null;
+
+    const nuevaFactura: FacturaHistorial = {
+      codigoFactura: codigo,
+      fechaISO: new Date().toISOString(),
+      visitante: usuario,
       tipo_tarifa: tarifa,
-      listaProductos,
-      listaTours,
-      idMetodoPago: Number(metodoPagoId),
-      // El SP recalcula total real con impuestos/desc, esto es un estimado:
-      montoPago: total,
+      total,
+      items: carrito,
     };
 
-    try {
-      setLoadingPago(true);
-      const res = await axios.post(
-        `${API}/api/facturas-publico/registrar-publico`,
-        payload
-      );
+    setHistorial(prev => [nuevaFactura, ...prev]);
+    setCarrito([]);
+    setUsuario("");
+    setMetodoPagoId("");
+    setError(null);
 
-      const codigo =
-        res.data?.codigo ||
-        res.data?.codigoFactura ||
-        res.data?.codigo_factura ||
-        null;
+    alert("Compra realizada correctamente ✨");
 
-      const nuevaFactura: FacturaHistorial = {
-        codigoFactura: codigo,
-        fechaISO: new Date().toISOString(),
-        visitante: usuario,
-        tipo_tarifa: tarifa,
-        total,
-        items: carrito,
-      };
+  } catch (err: unknown) {
+    const e = err as ApiErrorResponse;
 
-      setHistorial((prev) => [nuevaFactura, ...prev]);
-      setCarrito([]);
-      setUsuario("");
-      setMetodoPagoId("");
-      setError(null);
+    const msg =
+      e.response?.data?.message ??
+      e.response?.data?.Mensaje ??
+      "No se pudo registrar la factura.";
 
-      alert("Compra realizada correctamente ✨");
-    } catch (err: any) {
-      console.error("Error registrando factura público", err);
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.Mensaje ||
-        "No se pudo registrar la factura.";
-      setError(msg);
-    } finally {
-      setLoadingPago(false);
-    }
+    setError(msg);
+
+  } finally {
+    setLoadingPago(false);
   }
+}
+
 
   /* ============== Pasarela simulada PayPal / Stripe ============== */
 
@@ -755,7 +849,7 @@ export default function FacturacionPage() {
                   
                   <div className="border-t mt-3 pt-3 text-sm">
                     <div className="flex justify-between"><span>Subtotal</span><b>L {subtotal.toFixed(2)}</b></div>
-                    <div className="flex justify-between"><span>Tarifa visitante</span><b>L {tarifaBase.toFixed(2)}</b></div>
+                    
                     <p className="text-[11px] opacity-50">Impuestos y descuentos se aplicarán automáticamente</p>
                     <div className="flex justify-between text-lg font-bold mt-1 text-[#FACC15]">
                       <span>Total</span><span>L {total.toFixed(2)}</span>

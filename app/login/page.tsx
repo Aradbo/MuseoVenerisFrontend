@@ -6,6 +6,8 @@ import { signIn } from "next-auth/react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+
 export default function LoginPage() {
   const router = useRouter();
 
@@ -20,41 +22,58 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
 
-    try {
-      const resp = await axios.post("http://localhost:3000/api/auth/login", {
-        usuario,
-        contrasenia,
-        correo,
-      });
+    interface ApiError {
+  response?: {
+    data?: {
+      mensaje?: string;
+      message?: string;
+      Mensaje?: string;
+    };
+  };
+}
 
-if (resp.data.ok) {
+try {
+  const resp = await axios.post(`${API_BASE}/api/auth/login`, {
+    usuario,
+    contrasenia,
+    correo,
+  });
+
+  if (resp.data.ok) {
     localStorage.setItem("token", resp.data.token);
     localStorage.setItem("tipoUsuario", resp.data.tipoUsuario);
     localStorage.setItem("idEmpleado", resp.data.idEmpleado ?? "");
     localStorage.setItem("idVisitante", resp.data.idVisitante ?? "");
 
-    //CLAVE: también guardarlo en cookie para middleware ---
-    document.cookie = `tipoUsuario=${resp.data.tipoUsuario}; path=/; max-age=7200`; // 2 horas
+    // cookie para middleware
+    document.cookie = `tipoUsuario=${resp.data.tipoUsuario}; path=/; max-age=7200`;
 
     if (resp.data.tipoUsuario === "Empleado") {
-        router.push("/panel");
+      router.push("/panel");
     } else {
-        router.push("/inicio");
+      router.push("/inicio");
     }
+    
+    return; // <- evita que pase al error de abajo si ya entró
+  }
+
+  setError("No se pudo determinar el tipo de usuario.");
+  return;
+
+} catch (err: unknown) {   // <-- sin any
+  const e = err as ApiError; // <-- permite usar response sin romper TS
+
+  setError(
+    e.response?.data?.mensaje ??
+    e.response?.data?.Mensaje ??
+    e.response?.data?.message ??
+    "Usuario, correo o contraseña incorrectos."
+  );
+
+} finally {
+  setLoading(false);
 }
 
-
-        setError("No se pudo determinar el tipo de usuario.");
-        return;
-      
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.mensaje ||
-          "Usuario, correo o contraseña incorrectos."
-      );
-    } finally {
-      setLoading(false);
-    }
   }
 
   function handleGoogleLogin() {

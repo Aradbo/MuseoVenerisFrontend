@@ -9,7 +9,7 @@ import CardExposicion from "../components/CardExposicion";
 import NavbarInvitado from "../components/NavbarInvitado";
 
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 // Respuesta genérica de la API basada en sendSpResponse / executeVIEW
 type ApiListResponse<T> = {

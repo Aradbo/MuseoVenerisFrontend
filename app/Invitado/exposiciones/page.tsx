@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 
 type ApiListResponse<T> = {
   ok: boolean;
@@ -550,19 +550,19 @@ export default function ExposicionesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {exposFiltradas.map((expo) => {
                 const img = getFirstImage(expo.urls);
-                const nombre = expo.nombre ?? expo.Exposicion ?? "Exposición";
+                const nombre = expo.Exposicion ?? "Exposición";
                 const descripcion =
                   expo.descripcion ??
                   expo.DescripcionExposicion ??
                   "Sin descripción disponible";
-                const sala = expo.sala ?? expo.Sala;
-                const edificio = expo.edificio ?? expo.Edificio;
-                const sucursal = expo.sucursal ?? expo.Sucursal;
-                const fi = expo.fecha_inicio
-                  ? new Date(expo.fecha_inicio).toLocaleDateString()
+                const sala = expo.Sala;
+                const edificio = expo.Edificio;
+                const sucursal = expo.Sucursal;
+                const fi = expo.FechaInicioExposicion
+                  ? new Date(expo.FechaInicioExposicion).toLocaleDateString()
                   : null;
-                const ff = expo.fecha_fin
-                  ? new Date(expo.fecha_fin).toLocaleDateString()
+                const ff = expo.FechaFinExposicion
+                  ? new Date(expo.FechaFinExposicion).toLocaleDateString()
                   : null;
                 const estNorm = normalizarEstado(expo.estado);
 

@@ -2,32 +2,47 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Loader2, CheckCircle, XCircle, FileText, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+const API = process.env.NEXT_PUBLIC_API_URL;
+
+type FacturaVerificada = {
+  codigo_factura: string;
+  visitante: string;
+  tipo_tarifa: string;
+  total: number;
+  total_impuesto: number;
+  total_descuento: number;
+};
+
+
 
 export default function VerificarFactura() {
   const { codigo } = useParams(); 
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<FacturaVerificada | null>(null);
   const [status, setStatus] = useState<"loading"|"ok"|"fail">("loading");
 
   useEffect(() => {
-    async function fetchData(){
-      try{
-        const resp = await fetch(`${API}/api/factura/validar/${codigo}`);
-        const json = await resp.json();
+  async function fetchData() {
+    try {
+      const resp = await fetch(`${API}/api/factura/validar/${codigo}`);
+      const json = await resp.json();
 
-        if(json.ok){
-          setData(json.data);
-          setStatus("ok");
-        }else{
-          setStatus("fail");
-        }
-      }catch{
+      if (json.ok) {
+        setData(json.data as FacturaVerificada); // 👈 CAST aquí
+        setStatus("ok");
+      } else {
         setStatus("fail");
       }
+    } catch {
+      setStatus("fail");
     }
-    fetchData();
-  }, [codigo]);
+  }
+
+  fetchData();
+}, [codigo]);
+
 
   return(
     <main className="min-h-screen flex flex-col items-center justify-center bg-[#111] text-white p-6">
@@ -46,44 +61,62 @@ export default function VerificarFactura() {
           <p className="text-gray-300 text-center max-w-sm">
             Este código no existe o el documento fue alterado.
           </p>
-          <a href="/" className="mt-4 text-gray-200 underline">Volver al inicio</a>
+          <link href="/" className="mt-4 text-gray-200 underline">Volver al inicio</link>
         </div>
       )}
 
-      {status==="ok" &&(
-        <div className="bg-[#1b1b1b] p-8 rounded-xl shadow-lg border border-[#FACC15]/30 w-full max-w-xl animate-fade-in">
+      {status === "ok" && data && (
+  <div className="bg-[#1b1b1b] p-8 rounded-xl shadow-lg border border-[#FACC15]/30 w-full max-w-xl animate-fade-in">
+    {/* aquí adentro TS ya sabe que data NO es null */}
 
-          <div className="flex items-center gap-3 mb-2">
-            <CheckCircle size={50} className="text-[#22c55e]" />
-            <h2 className="text-2xl font-bold text-[#FACC15]">Factura verificada</h2>
-          </div>
+    <div className="flex items-center gap-3 mb-2">
+      <CheckCircle size={50} className="text-[#22c55e]" />
+      <h2 className="text-2xl font-bold text-[#FACC15]">Factura verificada</h2>
+    </div>
 
-          <p className="text-gray-300 mb-4">Documento auténtico y registrado en el sistema.</p>
+    <p className="text-gray-300 mb-4">
+      Documento auténtico y registrado en el sistema.
+    </p>
 
-          <div className="bg-black/40 rounded-lg p-5 space-y-2 border border-[#FACC15]/20">
-            <div className="flex justify-between"><b>Código:</b> <span>{data.codigo_factura}</span></div>
-            <div className="flex justify-between"><b>Visitante:</b> <span>{data.visitante}</span></div>
-            <div className="flex justify-between"><b>Tarifa:</b> <span>{data.tipo_tarifa}</span></div>
-            <div className="flex justify-between"><b>Total:</b> <span>L {data.total.toFixed(2)}</span></div>
-            <div className="flex justify-between"><b>Impuestos:</b> <span>L {data.total_impuesto.toFixed(2)}</span></div>
-            <div className="flex justify-between"><b>Descuentos:</b> <span>L {data.total_descuento.toFixed(2)}</span></div>
-          </div>
+    <div className="bg-black/40 rounded-lg p-5 space-y-2 border border-[#FACC15]/20">
+      <div className="flex justify-between">
+        <b>Código:</b> <span>{data.codigo_factura}</span>
+      </div>
+      <div className="flex justify-between">
+        <b>Visitante:</b> <span>{data.visitante}</span>
+      </div>
+      <div className="flex justify-between">
+        <b>Tarifa:</b> <span>{data.tipo_tarifa}</span>
+      </div>
+      <div className="flex justify-between">
+        <b>Total:</b> <span>L {data.total.toFixed(2)}</span>
+      </div>
+      <div className="flex justify-between">
+        <b>Impuestos:</b>{" "}
+        <span>L {data.total_impuesto.toFixed(2)}</span>
+      </div>
+      <div className="flex justify-between">
+        <b>Descuentos:</b>{" "}
+        <span>L {data.total_descuento.toFixed(2)}</span>
+      </div>
+    </div>
 
-          <div className="flex justify-between mt-6">
-            <a href="" className="flex items-center gap-2 text-gray-200 hover:text-white">
-              <ArrowLeft size={18}/> Volver
-            </a>
-            <a 
-              href={`${API}/api/pdf/publico/${data.codigo_factura}`}
-              target="_blank"
-              className="flex items-center gap-2 bg-[#FACC15] px-4 py-2 rounded-md text-black font-semibold hover:bg-[#e9b30e]"
-            >
-              <FileText size={18}/> Descargar PDF
-            </a>
-          </div>
+    <div className="flex justify-between mt-6">
+      <Link href="/"
+        className="flex items-center gap-2 text-gray-200 hover:text-white">
+        <ArrowLeft size={18} /> Volver
+      </Link>
 
-        </div>
-      )}
+      <a
+        href={`${API}/api/pdf/publico/${data.codigo_factura}`}
+        target="_blank"
+        className="flex items-center gap-2 bg-[#FACC15] px-4 py-2 rounded-md text-black font-semibold hover:bg-[#e9b30e]">
+        <FileText size={18} /> Descargar PDF
+      </a>
+    </div>
+  </div>
+)}
+
     </main>
   );
 }

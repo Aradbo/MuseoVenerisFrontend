@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Plus, Edit, Trash2, Upload, Search, Palette, Library } from "lucide-react";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const API = process.env.NEXT_PUBLIC_API_URL;
 
 // ─────────────────────────── Interfaces ───────────────────────────
 interface Obra{
@@ -22,6 +22,27 @@ interface Obra{
 interface Artista{ idArtista:number; nombre:string }
 interface Coleccion{ idColeccion:number; tipo:string }
 
+interface FormObra {
+  idObra_Arte?: number;
+  titulo?: string;
+  descripcion?: string;
+  dimensiones?: string;
+  anio_creacion?: string | null;
+  idArtista?: number;
+  idColeccion?: number;
+  urls?: string;
+}
+
+type ModalProps = {
+  titulo: string;
+  submit: () => void;
+  cerrar: () => void;
+  form: FormObra;
+  setForm: React.Dispatch<React.SetStateAction<FormObra>>;
+  artistas: Artista[];
+  colecciones: Coleccion[];
+};
+
 // ────────────────────────────────────────────────────────────────
 export default function ObrasAdminPage(){
   const [obras,setObras]=useState<Obra[]>([]);
@@ -32,9 +53,11 @@ export default function ObrasAdminPage(){
 
   const [modalNew,setModalNew]=useState(false);
   const [modalEdit,setModalEdit]=useState(false);
-  const [form,setForm]=useState<any>({});
+  const [form,setForm]=useState<FormObra>({});
   const [editId,setEditId]=useState<number|null>(null);
   const [preview,setPreview]=useState<Obra|null>(null);
+
+  const [busqueda, setBusqueda] = useState("");
 
   // ─────── Cargar data ───────
   async function loadAll(){
@@ -93,13 +116,35 @@ export default function ObrasAdminPage(){
   }
 
   // ─────── Filtros ───────
-  function filtrar(tipo:string,val:string){
-    if(val==="") return setObras(backup)
-    const low=val.toLowerCase()
-    if(tipo==="texto")     return setObras(backup.filter(o=>o.titulo.toLowerCase().includes(low)))
-    if(tipo==="artista")   return setObras(backup.filter(o=>o.Artista?.toLowerCase().includes(low)))
-    if(tipo==="coleccion") return setObras(backup.filter(o=>o.nombre_coleccion?.toLowerCase().includes(low)))
+  // ─────── Buscar solo por texto ───────
+function filtrarTexto(val: string) {
+  setBusqueda(val);
+  const v = val.trim().toLowerCase();
+
+  if (!v) {
+    // si está vacío, mostramos todo
+    setObras(backup);
+    return;
   }
+
+  // filtra por título, descripción, artista o colección
+  setObras(
+    backup.filter((o) => {
+      const titulo = o.titulo?.toLowerCase() || "";
+      const desc = o.descripcion?.toLowerCase() || "";
+      const artista = o.Artista?.toLowerCase() || "";
+      const coleccion = o.nombre_coleccion?.toLowerCase() || "";
+
+      return (
+        titulo.includes(v) ||
+        desc.includes(v) ||
+        artista.includes(v) ||
+        coleccion.includes(v)
+      );
+    })
+  );
+}
+
 
   return(
   <div className="min-h-screen px-10 py-12 bg-[#dbe4ff]">
@@ -122,33 +167,19 @@ export default function ObrasAdminPage(){
     </div>
 
     {/* FILTROS */}
-    <div className="flex gap-4 mt-10 justify-center">
+<div className="flex gap-4 mt-10 justify-center">
+  {/* 🔍 Búsqueda general */}
+  <div className="flex items-center bg-white px-4 py-2 rounded-full shadow-md w-80">
+    <Search className="opacity-60" />
+    <input
+      value={busqueda}
+      onChange={(e) => filtrarTexto(e.target.value)}
+      placeholder="Buscar por título, artista o colección..."
+      className="ml-2 outline-none w-full bg-transparent"
+    />
+  </div>
+</div>
 
-      {/* 🔍 Búsqueda */}
-      <div className="flex items-center bg-white px-4 py-2 rounded-full shadow-md w-72">
-        <Search className="opacity-60"/><input 
-          onChange={(e)=>filtrar("texto",e.target.value)}
-          placeholder="Buscar título..." className="ml-2 outline-none w-full"/>
-      </div>
-
-      {/* 🎭 Artista */}
-      <div className="px-4 py-2 bg-white rounded-full shadow-md">
-        <select className="outline-none"
-          onChange={(e)=>filtrar("artista",e.target.value)}>
-          <option value="">🎭 Artistas</option>
-          {artistas.map(a=> <option value={a.nombre} key={a.idArtista}>{a.nombre}</option>)}
-        </select>
-      </div>
-
-      {/* 🏛 Colección */}
-      <div className="px-4 py-2 bg-white rounded-full shadow-md">
-        <select className="outline-none"
-          onChange={(e)=>filtrar("coleccion",e.target.value)}>
-          <option value="">🏛 Colecciones</option>
-          {colecciones.map(c=> <option key={c.idColeccion} value={c.tipo}>{c.tipo}</option>)}
-        </select>
-      </div>
-    </div>
 
     {/* ───────────── LOADING ───────────── */}
     {loading && (
@@ -227,8 +258,8 @@ export default function ObrasAdminPage(){
 }
 
 /*──────────────────────────── MODAL ───────────────────────────*/
-function Modal({titulo,submit,cerrar,form,setForm,artistas,colecciones}:any){
-  return(
+function Modal({ titulo, submit, cerrar, form, setForm, artistas, colecciones }: ModalProps) {
+  return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
       <div className="bg-white rounded-2xl p-7 w-[430px] shadow-xl animate-[fadeIn_.3s]">
 
@@ -236,40 +267,62 @@ function Modal({titulo,submit,cerrar,form,setForm,artistas,colecciones}:any){
 
         <div className="flex flex-col gap-3">
 
-          <input placeholder="Título" value={form.titulo||""}
-            onChange={e=>setForm({...form,titulo:e.target.value})}
-            className="input"/>
+          <input
+            placeholder="Título"
+            value={form.titulo ?? ""}
+            onChange={e => setForm({ ...form, titulo: e.target.value })}
+            className="input"
+          />
 
-          <textarea placeholder="Descripción" value={form.descripcion||""}
-            onChange={e=>setForm({...form,descripcion:e.target.value})}
-            className="input"/>
+          <textarea
+            placeholder="Descripción"
+            value={form.descripcion ?? ""}
+            onChange={e => setForm({ ...form, descripcion: e.target.value })}
+            className="input"
+          />
 
-          <input type="date" value={form.anio_creacion||""}
-            onChange={e=>setForm({...form,anio_creacion:e.target.value})}
-            className="input"/>
+          <input
+            type="date"
+            value={form.anio_creacion ?? ""}
+            onChange={e => setForm({ ...form, anio_creacion: e.target.value })}
+            className="input"
+          />
 
-          <input placeholder="Dimensiones" value={form.dimensiones||""}
-            onChange={e=>setForm({...form,dimensiones:e.target.value})}
-            className="input"/>
+          <input
+            placeholder="Dimensiones"
+            value={form.dimensiones ?? ""}
+            onChange={e => setForm({ ...form, dimensiones: e.target.value })}
+            className="input"
+          />
 
-          <select value={form.idArtista||""}
-            onChange={e=>setForm({...form,idArtista:Number(e.target.value)})}
-            className="input">
+          <select
+            value={form.idArtista ?? ""}
+            onChange={e => setForm({ ...form, idArtista: Number(e.target.value) })}
+            className="input"
+          >
             <option value="">--Seleccione Artista--</option>
-            {artistas.map((a:any)=><option key={a.idArtista} value={a.idArtista}>{a.nombre}</option>)}
+            {artistas.map(a =>
+              <option key={a.idArtista} value={a.idArtista}>{a.nombre}</option>
+            )}
           </select>
 
-          <select value={form.idColeccion||""}
-            onChange={e=>setForm({...form,idColeccion:Number(e.target.value)})}
-            className="input">
+          <select
+            value={form.idColeccion ?? ""}
+            onChange={e => setForm({ ...form, idColeccion: Number(e.target.value) })}
+            className="input"
+          >
             <option value="">--Seleccione Colección--</option>
-            {colecciones.map((c:any)=><option key={c.idColeccion} value={c.idColeccion}>{c.tipo}</option>)}
+            {colecciones.map(c =>
+              <option key={c.idColeccion} value={c.idColeccion}>{c.tipo}</option>
+            )}
           </select>
 
-          <input placeholder="URL Imagen" value={form.urls||""}
-            onChange={e=>setForm({...form,urls:e.target.value})}
-            className="input"/>
-
+          <input
+            placeholder="URL Imagen"
+            value={form.urls ?? ""}
+            onChange={e => setForm({ ...form, urls: e.target.value })}
+            className="input"
+          />
         </div>
 
         <button onClick={submit}
@@ -283,5 +336,5 @@ function Modal({titulo,submit,cerrar,form,setForm,artistas,colecciones}:any){
         </button>
       </div>
     </div>
-  )
+  );
 }

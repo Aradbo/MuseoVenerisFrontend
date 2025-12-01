@@ -142,50 +142,90 @@ export default function PanelPage() {
     },
   ];
 
-  const quickActions = [
-    {
-      id: "nueva-venta",
-      titulo: "Registrar nueva venta",
-      descripcion: "Facturación rápida desde el panel.",
-      icon: CreditCard,
-      href: "/panel/facturar", // aquí luego usaremos SP_RegistrarFacturasCompleta
-    },
-    {
-      id: "gestionar-obras",
-      titulo: "Gestionar artistas y obras",
-      descripcion: "Altas, bajas y edición de piezas.",
-      icon: ImageIcon,
-      href: "/panel/obras",
-    },
-    {
-      id: "gestionar-expos",
-      titulo: "Gestionar colecciones y expos",
-      descripcion: "Curaduría y programación.",
-      icon: Sparkles,
-      href: "/panel/exposiciones",
-    },
-    {
-      id: "gestionar-tours",
-      titulo: "Gestionar tours",
-      descripcion: "Horarios, tarifas y capacidad.",
-      icon: CalendarClock,
-      href: "/panel/tours",
-    },
-    {
-      id: "gestionar-productos",
-      titulo: "Gestionar productos",
-      descripcion: "Tienda del museo, stock e imágenes.",
-      icon: ShoppingBag,
-      href: "/panel/productos",
-    },
-    {
-      id: "empleados",
-      titulo: "Ver información de empleados",
-      descripcion: "Privilegios e historial (vistas).",
-      icon: Users,
-      href: "/panel/empleados",
-    },
-  ];
+const quickActions = [
+  {
+    id: "facturar",
+    titulo: "Registrar nueva venta",
+    descripcion: "Facturación inmediata y emisión de ticket.",
+    icon: CreditCard,
+    color: "from-amber-400 to-amber-600",
+    href: "/panel/facturar",
+  },
+  {
+    id: "obras",
+    titulo: "Gestionar obras",
+    descripcion: "Alta, baja y edición de piezas artísticas.",
+    icon: ImageIcon,
+    color: "from-yellow-400 to-amber-500",
+    href: "/panel/obras",
+  },
+  {
+    id: "artistas",
+    titulo: "Gestionar artistas",
+    descripcion: "Administrar autores y perfiles culturales.",
+    icon: Sparkles,
+    color: "from-pink-400 to-rose-500",
+    href: "/panel/artistas",
+  },
+  {
+    id: "expos",
+    titulo: "Gestionar exposiciones",
+    descripcion: "Curaduría, programación y estado.",
+    icon: Palette,
+    color: "from-green-400 to-emerald-600",
+    href: "/panel/exposiciones",
+  },
+  {
+    id: "salas",
+    titulo: "Gestionar salas",
+    descripcion: "Zonas, espacios y áreas del museo.",
+    icon: LayoutDashboard,
+    color: "from-indigo-400 to-indigo-600",
+    href: "/panel/salas",
+  },
+  {
+    id: "tours",
+    titulo: "Gestionar tours",
+    descripcion: "Horarios, recorridos guiados y acceso.",
+    icon: CalendarClock,
+    color: "from-purple-400 to-violet-600",
+    href: "/panel/tours",
+  },
+  {
+    id: "productos",
+    titulo: "Gestionar productos",
+    descripcion: "Tienda del museo, stock e imágenes.",
+    icon: ShoppingBag,
+    color: "from-blue-400 to-sky-600",
+    href: "/panel/productos",
+  },
+  {
+    id: "visitantes",
+    titulo: "Gestionar visitantes",
+    descripcion: "Registro y control de acceso público.",
+    icon: Users,
+    color: "from-orange-400 to-amber-600",
+    href: "/panel/visitantes",
+  },
+  {
+    id: "empleados",
+    titulo: "Gestionar empleados",
+    descripcion: "Contratación, roles y administración.",
+    icon: Users,
+    color: "from-slate-400 to-slate-600",
+    href: "/panel/empleados/gestion",
+  },
+  {
+    id: "empleados-info",
+    titulo: "Ver información de empleados",
+    descripcion: "Historial, privilegios y actividad.",
+    icon: Users,
+    color: "from-gray-400 to-gray-600",
+    href: "/panel/empleados/informacion",
+  },
+];
+
+
 
   return (
   <div className="min-h-screen bg-gradient-to-b from-[#dbeafe] via-[#e0f2fe] to-[#f0f9ff] text-[#0b1a33]">
@@ -214,26 +254,30 @@ export default function PanelPage() {
           </h2>
 
           <div className="grid gap-3">
-            {quickActions.map(a =>{
-              const Icon=a.icon;
-              return(
-                <button key={a.id}
-                onClick={()=>router.push(a.href)}
-                className="flex items-center justify-between rounded-xl px-4 py-3 bg-white border border-slate-200 hover:border-[#0ea5e9] hover:shadow-lg transition">
-                  <div className="flex items-center gap-3">
-                    <span className="h-9 w-9 flex items-center justify-center bg-[#e0f2fe] rounded-lg">
-                      <Icon className="text-[#0284c7]"/>
-                    </span>
-                    <div>
-                      <p className="font-medium">{a.titulo}</p>
-                      <p className="text-[11px] opacity-70">{a.descripcion}</p>
-                    </div>
-                  </div>
-                  <ArrowRight/>
-                </button>
-              );
-            })}
+  {quickActions.map(a =>{
+    const Icon=a.icon;
+    return(
+      <button key={a.id}
+      onClick={()=>router.push(a.href)}
+      className="flex items-center justify-between rounded-xl px-4 py-4 bg-white border border-slate-200 hover:shadow-md hover:border-transparent hover:bg-gradient-to-r transition group duration-200"
+      style={{ backgroundImage:`linear-gradient(to right, var(--tw-gradient-stops))` }}>
+
+        <div className="flex items-center gap-3">
+          <span className={`h-10 w-10 flex items-center justify-center text-white rounded-lg bg-gradient-to-br ${a.color}`}>
+            <Icon size={20}/>
+          </span>
+          <div>
+            <p className="font-semibold text-[14px]">{a.titulo}</p>
+            <p className="text-[11px] opacity-80">{a.descripcion}</p>
           </div>
+        </div>
+
+        <ArrowRight className="opacity-70 group-hover:translate-x-1 transition"/>
+      </button>
+    );
+  })}
+</div>
+
         </section>
 
         {/* Tarjetas Estadísticas */}

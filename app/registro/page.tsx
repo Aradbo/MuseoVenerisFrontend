@@ -5,10 +5,25 @@ import { FormEvent, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+
 type OpcionLugar = {
   id: number;
   descripcion: string;
 };
+type PaisApi = {
+  idPais: number;
+  descripcion: string;
+};
+type ProvinciaApi = {
+  idProvincia: number;
+  descripcion: string;
+};
+type CiudadApi = {
+  idCiudad: number;
+  descripcion: string;
+};
+
 
 export default function RegistroVisitantePage() {
   const searchParams = useSearchParams();
@@ -43,15 +58,16 @@ export default function RegistroVisitantePage() {
   useEffect(() => {
     const cargarPaises = async () => {
       try {
-        const resp = await axios.get<OpcionLugar[]>(
-          "http://localhost:3000/api/lugares/paises"
+        const resp = await axios.get<PaisApi[]>(
+          `${API_BASE}/api/lugares/paises`
         );
 
         // El backend devuelve { idPais, descripcion }
-        const data = resp.data.map((p: any) => ({
-          id: p.idPais,
-          descripcion: p.descripcion,
-        }));
+        const data : OpcionLugar[] = resp.data.map((p) => ({
+        id: p.idPais,
+        descripcion: p.descripcion,
+      }));
+
 
         setPaises(data);
 
@@ -82,13 +98,13 @@ export default function RegistroVisitantePage() {
       }
 
       try {
-        const resp = await axios.get<OpcionLugar[]>(
-          `http://localhost:3000/api/lugares/provincias/${idPais}`
+        const resp = await axios.get<ProvinciaApi[]>(
+          `${API_BASE}/api/lugares/provincias/${idPais}`
         );
 
-        const data = resp.data.map((p: any) => ({
-          id: p.idProvincia,
-          descripcion: p.descripcion,
+        const data: OpcionLugar[] = resp.data.map((p) => ({
+         id: p.idProvincia,
+         descripcion: p.descripcion,
         }));
 
         setProvincias(data);
@@ -115,14 +131,14 @@ export default function RegistroVisitantePage() {
       }
 
       try {
-        const resp = await axios.get<OpcionLugar[]>(
-          `http://localhost:3000/api/lugares/ciudades/${idProvincia}`
+        const resp = await axios.get<CiudadApi[]>(
+          `${API_BASE}/api/lugares/ciudades/${idProvincia}`
         );
 
-        const data = resp.data.map((c: any) => ({
-          id: c.idCiudad,
-          descripcion: c.descripcion,
-        }));
+      const data: OpcionLugar[] = resp.data.map((c) => ({
+        id: c.idCiudad,
+        descripcion: c.descripcion,
+      }));
 
         setCiudades(data);
         setIdCiudad("");
@@ -171,6 +187,14 @@ export default function RegistroVisitantePage() {
   // -----------------------------
   // SUBMIT REGISTRO
   // -----------------------------
+  interface ApiError {
+  response?: {
+    data?: {
+      mensaje?: string;
+      message?: string;
+    };
+  };
+}
   async function handleRegistro(e: FormEvent) {
     e.preventDefault();
     setError("");
@@ -227,9 +251,8 @@ export default function RegistroVisitantePage() {
       };
 
       const resp = await axios.post(
-        "http://localhost:3000/api/auth/registroVisitante",
-        payload
-      );
+        `${API_BASE}/api/auth/registroVisitante`,
+        payload);
 
       const data = resp.data;
 
@@ -242,11 +265,14 @@ export default function RegistroVisitantePage() {
           router.push("/");
         }, 2000);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const e = err as ApiError;
+
       console.error("Error registro:", err);
-      setError(
-        err?.response?.data?.mensaje ||
-          "Error inesperado al registrar visitante."
+    setError(
+      e.response?.data?.mensaje ??
+      e.response?.data?.message ??
+      "Error inesperado al registrar visitante."
       );
     } finally {
       setLoading(false);
@@ -357,7 +383,7 @@ export default function RegistroVisitantePage() {
             <select
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#e0b251] focus:border-[#e0b251] bg-white"
               value={genero}
-              onChange={(e) => setGenero(e.target.value as any)}
+              onChange={(e) => setGenero(e.target.value as typeof genero)}
               required
             >
               <option value="">Selecciona una opción</option>
