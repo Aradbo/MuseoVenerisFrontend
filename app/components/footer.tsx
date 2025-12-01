@@ -17,16 +17,16 @@ export default function Footer() {
           <div>
             <h3 className="text-white font-semibold text-lg mb-3">Horarios</h3>
             <p className="text-sm">Martes a Domingo</p>
-            <p className="text-sm">10:00 AM — 6:00 PM</p>
+            <p className="text-sm">09:00 AM — 11:30 PM</p>
             <p className="text-sm mt-2 text-[#CBA135] font-medium">Lunes cerrado</p>
           </div>
 
           <div>
             <h3 className="text-white font-semibold text-lg mb-3">Contacto</h3>
-            <p className="text-sm">Av. de la Cultura 123</p>
-            <p className="text-sm">Ciudad del Arte</p>
-            <p className="text-sm">contacto@museoveneris.com</p>
-            <p className="text-sm">+34 123 456 789</p>
+            <p className="text-sm">Col. Brisas de Altamira</p>
+            <p className="text-sm">Ciudad de Comayagua</p>
+            <p className="text-sm">museoarteveneris@museoveneris.com</p>
+            <p className="text-sm">+504 8960-1143</p>
           </div>
 
         </div>

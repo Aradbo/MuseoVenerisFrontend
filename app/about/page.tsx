@@ -2,7 +2,7 @@ export default function NosotrosPage() {
   return (
     <div className="min-h-screen bg-[#0C0C0E] text-gray-200">
 
-      {/* 🏛️ HERO SECTION */}
+      {/* HERO SECTION */}
       <section 
         className="relative h-[70vh] flex items-center justify-center text-center"
         style={{ backgroundImage: "url('/hero-arte.jpg')", backgroundSize: "cover", backgroundPosition: "center" }}
@@ -19,7 +19,7 @@ export default function NosotrosPage() {
         </div>
       </section>
 
-      {/* 📜 HISTORIA */}
+      {/*  HISTORIA */}
       <section className="max-w-6xl mx-auto px-6 py-20 space-y-6 leading-relaxed">
         <h2 className="text-3xl font-bold text-[#CBA135]">Nuestra Historia</h2>
         <p className="text-gray-300 text-lg">
@@ -37,7 +37,7 @@ export default function NosotrosPage() {
         </p>
       </section>
 
-      {/* 🌟 MISIÓN & VISIÓN */}
+      {/* MISIÓN & VISIÓN */}
       <section className="bg-black/30 py-20 border-y border-[#CBA135]/20">
         <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto px-6">
 
@@ -63,7 +63,7 @@ export default function NosotrosPage() {
         </div>
       </section>
 
-      {/* 💛 VALORES */}
+      {/* VALORES */}
       <section className="max-w-6xl mx-auto px-6 py-20">
         <h2 className="text-3xl font-bold text-[#CBA135] mb-12 text-center">Nuestros Valores</h2>
 
