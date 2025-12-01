@@ -1,7 +1,7 @@
 // app/registro/page.tsx
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense,useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -25,7 +25,7 @@ type CiudadApi = {
 };
 
 
-export default function RegistroVisitantePage() {
+function RegistroForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -481,5 +481,14 @@ export default function RegistroVisitantePage() {
         </form>
       </div>
     </div>
+  );
+}
+
+
+export default function RegistroVisitantePage() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center">Cargando registro...</div>}>
+      <RegistroForm />
+    </Suspense>
   );
 }
