@@ -132,7 +132,7 @@ export default function PanelPage() {
     },
     {
       id: "ingresos",
-      titulo: "Ingresos hoy",
+      titulo: "Ingresos hoy -MUY PRONTO ESTA FUNCION",
       valor: resumen?.ingresosHoy ?? 0,
       descripcion: `Ventas: ${resumen?.ventasHoy ?? 0} factura(s)`,
       icon: BarChart3,
