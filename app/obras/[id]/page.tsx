@@ -118,7 +118,8 @@ function mapTipoExposicionActual(code?: string | null): string | null {
   }
 }
 
-export default function ObraDetallePage() {
+function ObraDetallePagesContent() {
+
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = Number(params.id);
@@ -563,5 +564,15 @@ export default function ObraDetallePage() {
         )}
       </div>
     </div>
+  );
+}
+
+import { Suspense } from "react";
+
+export default function ObraDetallePages() {
+  return (
+    <Suspense fallback={<p className="text-center py-20 text-sm">Cargando obra...</p>}>
+      <ObraDetallePagesContent />
+    </Suspense>
   );
 }

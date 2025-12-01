@@ -79,7 +79,8 @@ function formatDateTime(value: string | Date | null | undefined): string | null 
   })}`;
 }
 
-export default function ExposicionDetallePage() {
+function ExposicionDetallePageContent() {
+
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = Number(params.id);
@@ -539,5 +540,14 @@ const tourUrl = esVirtual && rawUrl && !isImageUrl ? rawUrl : null;
     </div>
     </div>
     </div>
+  );
+}
+import { Suspense } from "react";
+
+export default function ExposicionDetallePage() {
+  return (
+    <Suspense fallback={<p className="text-center py-20">Cargando exposición...</p>}>
+      <ExposicionDetallePageContent />
+    </Suspense>
   );
 }
